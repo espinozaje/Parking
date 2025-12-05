@@ -74,8 +74,8 @@ export class Parking {
     });
   }
 
-  descargarPDF(cobros: Cobro[] | null) {
-    console.log("Intentando descargar PDF...", cobros); // Para depuración
+descargarPDF(cobros: Cobro[] | null) {
+    console.log("Intentando descargar PDF...", cobros);
 
     if (!cobros || cobros.length === 0) {
       alert("No hay datos para exportar");
@@ -83,10 +83,8 @@ export class Parking {
     }
 
     try {
-      // Crear documento PDF
       const doc = new jsPDF();
 
-      // Título
       doc.setFontSize(18);
       doc.text('Reporte Smart Parking', 14, 20);
       
@@ -94,24 +92,28 @@ export class Parking {
       doc.setTextColor(100);
       doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
 
-      // Preparar datos
-      const bodyData = cobros.map(c => [
-        c.placa,
-        this.formatDate(c.timestamp),
-        this.esTurnoManana(c.timestamp) ? 'Mañana' : 'Noche',
-        `$ ${c.costo.toFixed(2)}`
-      ]);
+      // CORRECCIÓN AQUÍ: Protegemos contra valores nulos o undefined
+      const bodyData = cobros.map(c => {
+        const placaSegura = c.placa || 'Sin Placa';
+        const costoSeguro = Number(c.costo || 0); // Forzamos a número, si no existe es 0
+        const tiempoSeguro = Number(c.tiempo_seg || 0);
+        
+        return [
+          placaSegura,
+          this.formatDate(c.timestamp),
+          this.esTurnoManana(c.timestamp) ? 'Mañana' : 'Noche',
+          `$ ${costoSeguro.toFixed(2)}` // Ahora seguro que es un número
+        ];
+      });
 
-      // Generar tabla
       autoTable(doc, {
         head: [['Placa', 'Fecha', 'Turno', 'Monto']],
         body: bodyData,
         startY: 35,
         theme: 'grid',
-        headStyles: { fillColor: [28, 28, 30] }, // Color oscuro para encabezado
+        headStyles: { fillColor: [28, 28, 30] },
       });
 
-      // Guardar
       doc.save('Reporte_Parking.pdf');
       console.log("PDF Generado correctamente");
 
