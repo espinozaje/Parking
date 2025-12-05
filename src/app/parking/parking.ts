@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Database, ref, listVal, objectVal, set } from '@angular/fire/database';
+import { FormsModule } from '@angular/forms'; // <--- IMPORTANTE PARA LOS FILTROS
+import { Database, ref, objectVal, listVal, set } from '@angular/fire/database';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { jsPDF } from 'jspdf';
@@ -16,7 +17,7 @@ interface Cobro {
 
 @Component({
   selector: 'app-parking',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './parking.html',
   styleUrl: './parking.css',
 })
@@ -24,12 +25,18 @@ export class Parking {
   private db = inject(Database);
 
   espacios$: Observable<any[]>;
-  historial$: Observable<Cobro[]>;
+  
+  // Variables para el Historial y Filtros
+  historialOriginal: Cobro[] = []; // Datos crudos de Firebase
+  historialFiltrado: Cobro[] = []; // Datos filtrados para mostrar
+  
   espaciosLibres = 0;
   abriendoBarrera = false;
-  
-  // Pestaña activa por defecto
   activeTab: 'panel' | 'historial' = 'panel';
+
+  // --- VARIABLES DE FILTRO ---
+  filterDate: string = ''; // Formato 'YYYY-MM-DD'
+  filterShift: 'todos' | 'manana' | 'noche' = 'todos';
 
   constructor() {
     // 1. Escuchar Espacios
@@ -47,15 +54,54 @@ export class Parking {
       })
     );
 
-    // 2. Escuchar Historial
+    // 2. Escuchar Historial (Suscripción manual para poder filtrar)
     const historialRef = ref(this.db, 'historial_pagos');
-    this.historial$ = listVal(historialRef).pipe(
-      map((lista: any[]) => lista ? lista.reverse() : [])
-    ) as Observable<Cobro[]>;
+    listVal(historialRef).subscribe((data: any[]) => {
+      if (data) {
+        // Guardamos los datos originales invertidos (más reciente primero)
+        this.historialOriginal = (data as Cobro[]).reverse();
+        // Aplicamos filtros inmediatamente para mostrar algo
+        this.aplicarFiltros();
+      }
+    });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    // Inicializar fecha de filtro con el día de hoy (Opcional)
+    // const hoy = new Date();
+    // this.filterDate = hoy.toISOString().split('T')[0];
+  }
 
+  // --- FUNCIÓN DE FILTRADO ---
+  aplicarFiltros() {
+    this.historialFiltrado = this.historialOriginal.filter(cobro => {
+      // 1. Filtro por Fecha
+      let coincideFecha = true;
+      if (this.filterDate) {
+        // Convertir timestamp a YYYY-MM-DD local
+        // Nota: Ajustamos a local quitando el offset de zona horaria manualmente o usando strings
+        const fechaCobro = new Date(cobro.timestamp * 1000);
+        const year = fechaCobro.getFullYear();
+        const month =String(fechaCobro.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaCobro.getDate()).padStart(2, '0');
+        const fechaString = `${year}-${month}-${day}`;
+        
+        coincideFecha = fechaString === this.filterDate;
+      }
+
+      // 2. Filtro por Turno
+      let coincideTurno = true;
+      if (this.filterShift !== 'todos') {
+        const esManana = this.esTurnoManana(cobro.timestamp);
+        if (this.filterShift === 'manana') coincideTurno = esManana;
+        if (this.filterShift === 'noche') coincideTurno = !esManana;
+      }
+
+      return coincideFecha && coincideTurno;
+    });
+  }
+
+  // --- UTILIDADES ---
   abrirBarrera() {
     this.abriendoBarrera = true;
     set(ref(this.db, 'control/barrera_abierta'), true);
@@ -63,22 +109,34 @@ export class Parking {
   }
 
   esTurnoManana(timestamp: number): boolean {
+    if (!timestamp) return false;
     const hours = new Date(timestamp * 1000).getHours();
     return hours >= 6 && hours < 18;
   }
 
   formatDate(timestamp: number): string {
+    if (!timestamp) return '-';
     return new Date(timestamp * 1000).toLocaleString('es-PE', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
     });
   }
 
-descargarPDF(cobros: Cobro[] | null) {
-    console.log("Intentando descargar PDF...", cobros);
+  limpiarFiltros() {
+    this.filterDate = '';
+    this.filterShift = 'todos';
+    this.aplicarFiltros();
+  }
 
-    if (!cobros || cobros.length === 0) {
-      alert("No hay datos para exportar");
+  // --- PDF ---
+  descargarPDF() {
+    // Usamos historialFiltrado para que el PDF respete lo que ves en pantalla
+    const datosParaPDF = this.historialFiltrado;
+    
+    console.log("Exportando PDF...", datosParaPDF.length, "registros");
+
+    if (!datosParaPDF || datosParaPDF.length === 0) {
+      alert("No hay datos filtrados para exportar");
       return;
     }
 
@@ -90,19 +148,17 @@ descargarPDF(cobros: Cobro[] | null) {
       
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+      const fechaTexto = this.filterDate ? `Fecha Filtrada: ${this.filterDate}` : 'Reporte General';
+      doc.text(`Generado: ${new Date().toLocaleString()} | ${fechaTexto}`, 14, 28);
 
-      // CORRECCIÓN AQUÍ: Protegemos contra valores nulos o undefined
-      const bodyData = cobros.map(c => {
+      const bodyData = datosParaPDF.map(c => {
         const placaSegura = c.placa || 'Sin Placa';
-        const costoSeguro = Number(c.costo || 0); // Forzamos a número, si no existe es 0
-        const tiempoSeguro = Number(c.tiempo_seg || 0);
-        
+        const costoSeguro = Number(c.costo || 0);
         return [
           placaSegura,
           this.formatDate(c.timestamp),
           this.esTurnoManana(c.timestamp) ? 'Mañana' : 'Noche',
-          `$ ${costoSeguro.toFixed(2)}` // Ahora seguro que es un número
+          `$ ${costoSeguro.toFixed(2)}`
         ];
       });
 
@@ -114,12 +170,11 @@ descargarPDF(cobros: Cobro[] | null) {
         headStyles: { fillColor: [28, 28, 30] },
       });
 
-      doc.save('Reporte_Parking.pdf');
-      console.log("PDF Generado correctamente");
+      doc.save(`Reporte_Parking_${this.filterDate || 'General'}.pdf`);
 
     } catch (error) {
-      console.error("Error generando PDF:", error);
-      alert("Hubo un error al generar el PDF. Revisa la consola.");
+      console.error("Error PDF:", error);
+      alert("Error generando PDF");
     }
   }
 }

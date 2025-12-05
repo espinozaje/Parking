@@ -7,7 +7,7 @@
       <small>Panel de Control IoT</small>
     </div>
 
-    <!-- NAVEGACIÓN TIPO CÁPSULA (SEGMENTED CONTROL) -->
+    <!-- PESTAÑAS -->
     <div class="segmented-control">
       <button class="segment" 
               [class.active]="activeTab === 'panel'" 
@@ -21,15 +21,13 @@
       </button>
     </div>
 
-    <!-- INDICADOR DE DISPONIBILIDAD -->
+    <!-- INDICADOR -->
     <div class="availability-indicator" *ngIf="activeTab === 'panel'">
       <div class="availability-text">
         <span>DISPONIBILIDAD</span>
         <strong>🚗 {{ espaciosLibres }} de 10 Libres</strong>
       </div>
-      <!-- Anillo de progreso simple -->
-      <div class="progress-ring" 
-           [style.--percentage]="(espaciosLibres / 10) * 100">
+      <div class="progress-ring" [style.--percentage]="(espaciosLibres / 10) * 100">
         <svg viewBox="0 0 36 36">
           <path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
           <path class="meter" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
@@ -39,36 +37,28 @@
     </div>
   </header>
 
-  <!-- CONTENIDO PRINCIPAL -->
+  <!-- CONTENIDO -->
   <main class="content-area">
     
-    <!-- VISTA 1: PANEL (GRID CUADRADO) -->
+    <!-- VISTA 1: PANEL -->
     <div *ngIf="activeTab === 'panel'" class="panel-view fade-in">
       <div class="parking-grid">
         <div class="parking-card" *ngFor="let espacio of espacios$ | async"
              [ngClass]="{'occupied': espacio.ocupado, 'free': !espacio.ocupado}">
-          
-          <!-- Header de Tarjeta (ID + Punto de estado) -->
           <div class="card-header">
             <span class="space-id">E-{{ espacio.id }}</span>
             <div class="status-dot"></div>
           </div>
-
-          <!-- Cuerpo (Icono Grande) -->
           <div class="card-body">
             <div class="icon-circle">
               <span class="emoji-icon">{{ espacio.ocupado ? '🚘' : 'P' }}</span>
             </div>
           </div>
-
-          <!-- Footer (Etiqueta) -->
           <div class="card-footer">
             <span class="status-pill">{{ espacio.ocupado ? 'OCUPADO' : 'LIBRE' }}</span>
           </div>
         </div>
       </div>
-
-      <!-- Botón Flotante Inferior -->
       <div class="bottom-action">
         <button class="btn-main" (click)="abrirBarrera()" [disabled]="abriendoBarrera">
           <span *ngIf="!abriendoBarrera">🔓 ABRIR BARRERA</span>
@@ -77,24 +67,45 @@
       </div>
     </div>
 
-    <!-- VISTA 2: HISTORIAL (LISTA) -->
+    <!-- VISTA 2: HISTORIAL -->
     <div *ngIf="activeTab === 'historial'" class="history-view fade-in">
-      
-      <!-- CORRECCIÓN: Suscribirse al observable AQUÍ usando 'as historial' -->
-      <div class="history-container" *ngIf="historial$ | async as historial">
+      <div class="history-container">
         
         <div class="history-header">
           <h2>Historial de Pagos</h2>
-          <!-- AHORA: Usamos la variable local 'historial' sin pipe async -->
-          <button class="btn-small" *ngIf="historial.length > 0" 
-                  (click)="descargarPDF(historial)">
+          <!-- Botón PDF (Ahora usa datos filtrados automáticamente) -->
+          <button class="btn-small btn-export" 
+                  [disabled]="historialFiltrado.length === 0"
+                  (click)="descargarPDF()">
             Exportar PDF
           </button>
         </div>
 
+        <!-- --- BARRA DE FILTROS NUEVA --- -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label>Fecha:</label>
+            <input type="date" [(ngModel)]="filterDate" (change)="aplicarFiltros()">
+          </div>
+          
+          <div class="filter-group">
+            <label>Turno:</label>
+            <select [(ngModel)]="filterShift" (change)="aplicarFiltros()">
+              <option value="todos">Todos</option>
+              <option value="manana">☀️ Mañana (6am-6pm)</option>
+              <option value="noche">🌙 Noche (6pm-6am)</option>
+            </select>
+          </div>
+
+          <button class="btn-clear" (click)="limpiarFiltros()" *ngIf="filterDate || filterShift !== 'todos'">
+            Limpiar
+          </button>
+        </div>
+        <!-- ------------------------------ -->
+
         <div class="history-list">
-          <!-- AHORA: Usamos 'historial' directamente -->
-          <div class="history-item" *ngFor="let cobro of historial">
+          <!-- Iteramos sobre historialFiltrado en lugar del Observable directo -->
+          <div class="history-item" *ngFor="let cobro of historialFiltrado">
             <div class="icon-section">
               <div class="car-icon">🚗</div>
             </div>
@@ -115,8 +126,8 @@
             </div>
           </div>
           
-          <div class="empty-state" *ngIf="historial.length === 0">
-            <p>No hay registros recientes</p>
+          <div class="empty-state" *ngIf="historialFiltrado.length === 0">
+            <p>No hay registros con estos filtros</p>
           </div>
         </div>
       </div>

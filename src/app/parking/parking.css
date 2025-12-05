@@ -308,3 +308,77 @@
 /* Animaciones */
 .fade-in { animation: fadeIn 0.3s ease-in; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+
+.filters-bar {
+  display: flex;
+  gap: 15px;
+  background: #1C1C1E;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  border: 1px solid #3A3A3C;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  color: #8E8E93;
+  font-weight: 600;
+  margin-left: 5px;
+}
+
+/* Inputs Oscuros Estilo iOS */
+input[type="date"], select {
+  background: #2C2C2E;
+  border: 1px solid #3A3A3C;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  min-width: 150px;
+  transition: border-color 0.2s;
+  /* Icono calendario en modo oscuro */
+  color-scheme: dark; 
+}
+
+input[type="date"]:focus, select:focus {
+  border-color: #0A84FF;
+}
+
+/* Botón Limpiar */
+.btn-clear {
+  background: transparent;
+  color: #FF453A;
+  border: 1px solid #FF453A;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  height: 40px;
+  transition: all 0.2s;
+}
+
+.btn-clear:hover {
+  background: rgba(255, 69, 58, 0.1);
+}
+
+.btn-export {
+  background: #0A84FF;
+  color: white;
+  border: none;
+}
+.btn-export:disabled {
+  background: #3A3A3C;
+  color: #8E8E93;
+  cursor: not-allowed;
+}
