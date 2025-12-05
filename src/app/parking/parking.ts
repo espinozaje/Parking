@@ -130,7 +130,6 @@ export class Parking {
 
   // --- PDF ---
   descargarPDF() {
-    // Usamos historialFiltrado para que el PDF respete lo que ves en pantalla
     const datosParaPDF = this.historialFiltrado;
     
     console.log("Exportando PDF...", datosParaPDF.length, "registros");
@@ -143,14 +142,24 @@ export class Parking {
     try {
       const doc = new jsPDF();
 
+      // 1. Calcular el Total
+      const totalSuma = datosParaPDF.reduce((acc, curr) => {
+        return acc + (Number(curr.costo) || 0);
+      }, 0);
+
+      // Encabezado
       doc.setFontSize(18);
       doc.text('Reporte Smart Parking', 14, 20);
       
       doc.setFontSize(10);
       doc.setTextColor(100);
       const fechaTexto = this.filterDate ? `Fecha Filtrada: ${this.filterDate}` : 'Reporte General';
-      doc.text(`Generado: ${new Date().toLocaleString()} | ${fechaTexto}`, 14, 28);
+      const turnoTexto = this.filterShift !== 'todos' ? ` | Turno: ${this.filterShift.toUpperCase()}` : '';
+      
+      doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+      doc.text(`${fechaTexto}${turnoTexto}`, 14, 34);
 
+      // Cuerpo de la tabla
       const bodyData = datosParaPDF.map(c => {
         const placaSegura = c.placa || 'Sin Placa';
         const costoSeguro = Number(c.costo || 0);
@@ -162,12 +171,25 @@ export class Parking {
         ];
       });
 
+      // Generar tabla con Footer
       autoTable(doc, {
         head: [['Placa', 'Fecha', 'Turno', 'Monto']],
         body: bodyData,
-        startY: 35,
+        // AQUÍ AGREGAMOS LA FILA DE TOTAL
+        foot: [['', '', 'TOTAL INGRESOS', `$ ${totalSuma.toFixed(2)}`]],
+        startY: 40,
         theme: 'grid',
         headStyles: { fillColor: [28, 28, 30] },
+        footStyles: { 
+          fillColor: [28, 28, 30], 
+          textColor: [48, 209, 88], // Color Verde Neón para el dinero
+          fontStyle: 'bold',
+          halign: 'right' // Alinear a la derecha si es posible, o ajustar columnas
+        },
+        columnStyles: {
+          3: { halign: 'right' }, // Alinear columna de monto a la derecha
+          2: { halign: 'center' } // Centrar Turno
+        }
       });
 
       doc.save(`Reporte_Parking_${this.filterDate || 'General'}.pdf`);
