@@ -1,0 +1,310 @@
+/* --- CONFIGURACIÓN GLOBAL --- */
+:host {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  color: white;
+}
+
+.app-container {
+  min-height: 100vh;
+  background-color: #000000; /* Fondo Negro Puro como en la imagen */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- TOP BAR --- */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.logo-section h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.logo-section small {
+  color: #8E8E93;
+  font-size: 14px;
+}
+
+/* --- SEGMENTED CONTROL (PESTAÑAS CENTRALES) --- */
+.segmented-control {
+  background-color: #1C1C1E;
+  padding: 4px;
+  border-radius: 99px; /* Pill shape */
+  display: flex;
+  position: relative;
+  width: 250px;
+}
+
+.segment {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #8E8E93;
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.segment.active {
+  background-color: #3A3A3C; /* Gris un poco más claro para activo */
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* --- INDICADOR DE DISPONIBILIDAD (ANILLO) --- */
+.availability-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1C1C1E;
+  padding: 8px 16px;
+  border-radius: 16px;
+}
+
+.availability-text {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.availability-text span {
+  font-size: 10px;
+  color: #8E8E93;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.availability-text strong {
+  font-size: 14px;
+}
+
+.progress-ring {
+  width: 36px;
+  height: 36px;
+}
+
+.progress-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-ring .bg {
+  fill: none;
+  stroke: #3A3A3C;
+  stroke-width: 4;
+}
+
+.progress-ring .meter {
+  fill: none;
+  stroke: #0A84FF; /* Azul Cyan */
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+/* --- GRID DE PARKING (CUADRADO) --- */
+.parking-grid {
+  display: grid;
+  /* Esto crea cuadrados que se ajustan automáticamente */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 80px; /* Espacio para el botón flotante */
+}
+
+.parking-card {
+  aspect-ratio: 1 / 1; /* HACE QUE SEA UN CUADRADO PERFECTO */
+  background-color: #1C1C1E;
+  border-radius: 18px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.parking-card:hover {
+  transform: scale(1.02);
+}
+
+/* Estados de la tarjeta */
+.parking-card.free .status-dot { background-color: #30D158; box-shadow: 0 0 8px #30D158; }
+.parking-card.free .icon-circle { border: 2px solid rgba(48, 209, 88, 0.2); }
+.parking-card.free .emoji-icon { color: #30D158; }
+.parking-card.free .status-pill { background: rgba(48, 209, 88, 0.2); color: #30D158; }
+
+.parking-card.occupied .status-dot { background-color: #FF453A; box-shadow: 0 0 8px #FF453A; }
+.parking-card.occupied .icon-circle { border: 2px solid rgba(255, 69, 58, 0.2); }
+.parking-card.occupied .emoji-icon { color: #FF453A; }
+.parking-card.occupied .status-pill { background: rgba(255, 69, 58, 0.2); color: #FF453A; }
+
+/* Elementos internos de la tarjeta */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.space-id {
+  font-family: monospace;
+  font-size: 14px;
+  color: #8E8E93;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.card-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.emoji-icon {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.card-footer {
+  text-align: center;
+}
+
+.status-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* --- BOTÓN BARRERA --- */
+.bottom-action {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  z-index: 100;
+}
+
+.btn-main {
+  width: 100%;
+  background: #3acbf7; /* Cyan brillante de la imagen */
+  border: none;
+  padding: 16px;
+  border-radius: 16px;
+  color: white;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 10px 30px rgba(58, 203, 247, 0.3);
+  transition: transform 0.1s;
+}
+
+.btn-main:active { transform: scale(0.98); }
+.btn-main:disabled { background: #3A3A3C; box-shadow: none; color: #8E8E93; }
+
+/* --- HISTORIAL (LISTA) --- */
+.history-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #3A3A3C;
+}
+
+.history-item {
+  background: #1C1C1E;
+  margin-bottom: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.car-icon {
+  font-size: 24px;
+  background: #2C2C2E;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.info-section { flex: 1; }
+
+.plate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.plate { font-weight: 700; font-size: 16px; }
+
+.badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.badge-morning { background: rgba(255, 214, 10, 0.2); color: #FFD60A; }
+.badge-night { background: rgba(10, 132, 255, 0.2); color: #0A84FF; }
+
+.time-row { color: #8E8E93; font-size: 13px; }
+
+.cost-section {
+  font-size: 18px;
+  font-weight: 700;
+  color: #30D158;
+}
+
+.btn-small {
+  background: transparent;
+  border: 1px solid #0A84FF;
+  color: #0A84FF;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Animaciones */
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

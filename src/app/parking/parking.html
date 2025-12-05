@@ -1,0 +1,126 @@
+<div class="app-container">
+  
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="logo-section">
+      <h1>Smart Parking</h1>
+      <small>Panel de Control IoT</small>
+    </div>
+
+    <!-- NAVEGACIÓN TIPO CÁPSULA (SEGMENTED CONTROL) -->
+    <div class="segmented-control">
+      <button class="segment" 
+              [class.active]="activeTab === 'panel'" 
+              (click)="activeTab = 'panel'">
+        Panel
+      </button>
+      <button class="segment" 
+              [class.active]="activeTab === 'historial'" 
+              (click)="activeTab = 'historial'">
+        Historial
+      </button>
+    </div>
+
+    <!-- INDICADOR DE DISPONIBILIDAD -->
+    <div class="availability-indicator" *ngIf="activeTab === 'panel'">
+      <div class="availability-text">
+        <span>DISPONIBILIDAD</span>
+        <strong>🚗 {{ espaciosLibres }} de 10 Libres</strong>
+      </div>
+      <!-- Anillo de progreso simple -->
+      <div class="progress-ring" 
+           [style.--percentage]="(espaciosLibres / 10) * 100">
+        <svg viewBox="0 0 36 36">
+          <path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          <path class="meter" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                [attr.stroke-dasharray]="(espaciosLibres / 10 * 100) + ', 100'" />
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="content-area">
+    
+    <!-- VISTA 1: PANEL (GRID CUADRADO) -->
+    <div *ngIf="activeTab === 'panel'" class="panel-view fade-in">
+      <div class="parking-grid">
+        <div class="parking-card" *ngFor="let espacio of espacios$ | async"
+             [ngClass]="{'occupied': espacio.ocupado, 'free': !espacio.ocupado}">
+          
+          <!-- Header de Tarjeta (ID + Punto de estado) -->
+          <div class="card-header">
+            <span class="space-id">E-{{ espacio.id }}</span>
+            <div class="status-dot"></div>
+          </div>
+
+          <!-- Cuerpo (Icono Grande) -->
+          <div class="card-body">
+            <div class="icon-circle">
+              <span class="emoji-icon">{{ espacio.ocupado ? '🚘' : 'P' }}</span>
+            </div>
+          </div>
+
+          <!-- Footer (Etiqueta) -->
+          <div class="card-footer">
+            <span class="status-pill">{{ espacio.ocupado ? 'OCUPADO' : 'LIBRE' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón Flotante Inferior -->
+      <div class="bottom-action">
+        <button class="btn-main" (click)="abrirBarrera()" [disabled]="abriendoBarrera">
+          <span *ngIf="!abriendoBarrera">🔓 ABRIR BARRERA</span>
+          <span *ngIf="abriendoBarrera" class="pulse">ABRIENDO...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- VISTA 2: HISTORIAL (LISTA) -->
+    <div *ngIf="activeTab === 'historial'" class="history-view fade-in">
+      
+      <!-- CORRECCIÓN: Suscribirse al observable AQUÍ usando 'as historial' -->
+      <div class="history-container" *ngIf="historial$ | async as historial">
+        
+        <div class="history-header">
+          <h2>Historial de Pagos</h2>
+          <!-- AHORA: Usamos la variable local 'historial' sin pipe async -->
+          <button class="btn-small" *ngIf="historial.length > 0" 
+                  (click)="descargarPDF(historial)">
+            Exportar PDF
+          </button>
+        </div>
+
+        <div class="history-list">
+          <!-- AHORA: Usamos 'historial' directamente -->
+          <div class="history-item" *ngFor="let cobro of historial">
+            <div class="icon-section">
+              <div class="car-icon">🚗</div>
+            </div>
+            <div class="info-section">
+              <div class="plate-row">
+                <span class="plate">{{ cobro.placa }}</span>
+                <span class="badge" 
+                      [ngClass]="esTurnoManana(cobro.timestamp) ? 'badge-morning' : 'badge-night'">
+                  {{ esTurnoManana(cobro.timestamp) ? '☀️ Turno Mañana' : '🌙 Turno Noche' }}
+                </span>
+              </div>
+              <div class="time-row">
+                {{ formatDate(cobro.timestamp) }} • ⏱ {{ cobro.tiempo_seg | number:'1.0-1' }}s
+              </div>
+            </div>
+            <div class="cost-section">
+              $ {{ cobro.costo | number:'1.2-2' }}
+            </div>
+          </div>
+          
+          <div class="empty-state" *ngIf="historial.length === 0">
+            <p>No hay registros recientes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
