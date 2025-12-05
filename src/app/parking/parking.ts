@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Database, ref, listVal, objectVal, set } from '@angular/fire/database';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 interface Cobro {
   placa: string;
@@ -75,24 +75,49 @@ export class Parking {
   }
 
   descargarPDF(cobros: Cobro[] | null) {
-    if (!cobros || cobros.length === 0) return;
-    const doc = new jsPDF();
-    doc.text('Reporte Smart Parking', 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+    console.log("Intentando descargar PDF...", cobros); // Para depuración
 
-    const bodyData = cobros.map(c => [
-      c.placa,
-      this.formatDate(c.timestamp),
-      this.esTurnoManana(c.timestamp) ? 'Mañana' : 'Noche',
-      `$ ${c.costo.toFixed(2)}`
-    ]);
+    if (!cobros || cobros.length === 0) {
+      alert("No hay datos para exportar");
+      return;
+    }
 
-    autoTable(doc, {
-      head: [['Placa', 'Fecha', 'Turno', 'Monto']],
-      body: bodyData,
-      startY: 35,
-    });
-    doc.save('Reporte_Parking.pdf');
+    try {
+      // Crear documento PDF
+      const doc = new jsPDF();
+
+      // Título
+      doc.setFontSize(18);
+      doc.text('Reporte Smart Parking', 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+
+      // Preparar datos
+      const bodyData = cobros.map(c => [
+        c.placa,
+        this.formatDate(c.timestamp),
+        this.esTurnoManana(c.timestamp) ? 'Mañana' : 'Noche',
+        `$ ${c.costo.toFixed(2)}`
+      ]);
+
+      // Generar tabla
+      autoTable(doc, {
+        head: [['Placa', 'Fecha', 'Turno', 'Monto']],
+        body: bodyData,
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [28, 28, 30] }, // Color oscuro para encabezado
+      });
+
+      // Guardar
+      doc.save('Reporte_Parking.pdf');
+      console.log("PDF Generado correctamente");
+
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      alert("Hubo un error al generar el PDF. Revisa la consola.");
+    }
   }
 }
